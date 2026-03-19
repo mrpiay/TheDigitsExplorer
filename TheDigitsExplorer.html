@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Digits Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">
+                The Digits Explorer
+            </h1>
+            <p class="text-2xl text-gray-800 mb-2">
+                <strong>Representing Numbers with Symbols</strong>
+
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-6">Set Up Your System</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Number of Digits: <span id="numContainersDisplay">4</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value="4"
+                        id="numContainersSlider"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Number of Symbols: <span id="numSymbolsDisplay">3</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="2"
+                        max="5"
+                        value="3"
+                        id="numSymbolsSlider"
+                        class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-3">
+                    Define Your Symbols (click to edit):
+                </label>
+                <div id="symbolsContainer" class="flex gap-4 flex-wrap">
+                    <!-- Symbols will be rendered here -->
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    Use any text, emoji, or symbol (up to 3 characters each)
+                </p>
+            </div>
+        </div>
+
+        <!-- Place Value Builder -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Build Your Number</h2>
+            <div id="placeValueContainer" class="grid gap-4">
+                <!-- Place value containers will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Calculation Display -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Calculation Breakdown</h2>
+            <div class="space-y-3">
+                <div id="calculationBreakdown" class="flex flex-wrap items-center gap-2 text-lg">
+                    <!-- Calculation breakdown will be rendered here -->
+                </div>
+
+                <div class="border-t-2 border-gray-300 pt-4">
+                    <div class="text-3xl font-bold text-center text-blue-600">
+                        Total = <span id="totalValue">0</span>
+                    </div>
+                    <p class="text-center text-sm text-gray-500 mt-2">
+                        (in base-10 / decimal)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <button
+            id="resetButton"
+            class="mt-6 w-full flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+        >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            Reset All Positions
+        </button>
+
+    </div>
+
+    <script>
+        // State
+        let numSymbols = 3;
+        let numContainers = 4;
+        let symbols = ['A', 'B', 'C'];
+        let positions = [0, 2, 0, 1];
+
+        // Helper functions
+        function getPlaceValue(position) {
+            return Math.pow(numSymbols, position);
+        }
+
+        function calculateTotal() {
+            return positions.reduce((sum, symbolIndex, pos) => {
+                return sum + (symbolIndex * getPlaceValue(pos));
+            }, 0);
+        }
+
+        function updatePosition(posIndex, symbolIndex) {
+            positions[posIndex] = symbolIndex;
+            render();
+        }
+
+        function updateSymbol(index, value) {
+            symbols[index] = value || '?';
+            render();
+        }
+
+        function initializeSymbols() {
+            const newSymbols = [];
+            for (let i = 0; i < numSymbols; i++) {
+                if (i < symbols.length) {
+                    newSymbols.push(symbols[i]);
+                } else {
+                    newSymbols.push(String.fromCharCode(65 + i));
+                }
+            }
+            symbols = newSymbols;
+
+            const newPositions = new Array(numContainers).fill(0);
+            if (numContainers === 4 && numSymbols >= 3) {
+                newPositions[0] = 0;
+                newPositions[1] = 2;
+                newPositions[2] = 0;
+                newPositions[3] = 1;
+            }
+            positions = newPositions;
+        }
+
+        function renderSymbols() {
+            const container = document.getElementById('symbolsContainer');
+            container.innerHTML = '';
+
+            symbols.forEach((symbol, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center gap-2';
+                div.innerHTML = `
+                    <input
+                        type="text"
+                        value="${symbol}"
+                        maxlength="3"
+                        data-idx="${idx}"
+                        class="symbol-input w-16 h-16 text-2xl text-center bg-gray-100 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                    />
+                    <span class="text-sm text-gray-600 font-semibold">= ${idx}</span>
+                `;
+                container.appendChild(div);
+            });
+
+            // Add event listeners to symbol inputs
+            document.querySelectorAll('.symbol-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    updateSymbol(idx, e.target.value);
+                });
+            });
+        }
+
+        function renderPlaceValue() {
+            const container = document.getElementById('placeValueContainer');
+            container.style.gridTemplateColumns = `repeat(${numContainers}, minmax(0, 1fr))`;
+            container.innerHTML = '';
+
+            [...positions].reverse().forEach((symbolIndex, reverseIdx) => {
+                const posIdx = numContainers - 1 - reverseIdx;
+                const placeValue = getPlaceValue(posIdx);
+
+                const div = document.createElement('div');
+                div.className = 'flex flex-col items-center';
+
+                let buttonsHtml = '';
+                symbols.forEach((sym, symIdx) => {
+                    const activeClass = symbolIndex === symIdx
+                        ? 'border-blue-500 bg-blue-100'
+                        : 'border-gray-300 bg-white hover:bg-gray-50';
+                    buttonsHtml += `
+                        <button
+                            onclick="updatePosition(${posIdx}, ${symIdx})"
+                            class="w-10 h-10 text-lg rounded border-2 transition-all ${activeClass}"
+                        >
+                            ${sym}
+                        </button>
+                    `;
+                });
+
+                div.innerHTML = `
+                    <div class="text-xs font-semibold text-gray-500 mb-2">
+                        ×${placeValue}
+                    </div>
+                    <div class="w-full aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg border-2 border-purple-300 flex items-center justify-center mb-2">
+                        <span class="text-4xl">${symbols[symbolIndex]}</span>
+                    </div>
+                    <div class="flex gap-1 flex-wrap justify-center">
+                        ${buttonsHtml}
+                    </div>
+                `;
+
+                container.appendChild(div);
+            });
+        }
+
+        function renderCalculation() {
+            const container = document.getElementById('calculationBreakdown');
+            container.innerHTML = '';
+
+            [...positions].reverse().forEach((symbolIndex, reverseIdx) => {
+                const posIdx = numContainers - 1 - reverseIdx;
+                const placeValue = getPlaceValue(posIdx);
+                const value = symbolIndex * placeValue;
+
+                if (reverseIdx > 0) {
+                    const plus = document.createElement('span');
+                    plus.className = 'text-gray-500';
+                    plus.textContent = '+';
+                    container.appendChild(plus);
+                }
+
+                const div = document.createElement('div');
+                div.className = 'bg-gray-100 px-3 py-1 rounded';
+                div.innerHTML = `<span class="font-mono">(${symbolIndex} × ${placeValue} = ${value})</span>`;
+                container.appendChild(div);
+            });
+
+            document.getElementById('totalValue').textContent = calculateTotal();
+        }
+
+        function render() {
+            renderSymbols();
+            renderPlaceValue();
+            renderCalculation();
+        }
+
+        // Event listeners
+        document.getElementById('numContainersSlider').addEventListener('input', (e) => {
+            numContainers = parseInt(e.target.value);
+            document.getElementById('numContainersDisplay').textContent = numContainers;
+            initializeSymbols();
+            render();
+        });
+
+        document.getElementById('numSymbolsSlider').addEventListener('input', (e) => {
+            numSymbols = parseInt(e.target.value);
+            document.getElementById('numSymbolsDisplay').textContent = numSymbols;
+            initializeSymbols();
+            render();
+        });
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            positions = new Array(numContainers).fill(0);
+            render();
+        });
+
+        // Initialize
+        initializeSymbols();
+        render();
+    </script>
+</body>
+</html>
